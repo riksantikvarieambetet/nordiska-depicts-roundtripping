@@ -1,0 +1,7 @@
+flask
+mwapi
+mwoauth
+pyyaml
+requests_oauthlib
+toolforge
+pywikibot

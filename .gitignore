@@ -1,0 +1,6 @@
+__pycache__
+config.yaml
+apicache-py3
+pywikibot.lwp
+throttle.ctrl
+.DS_Store
