@@ -9,6 +9,7 @@ import requests_oauthlib
 import string
 import toolforge
 import yaml
+import json
 
 
 app = flask.Flask(__name__)
@@ -116,42 +117,6 @@ def index():
     return flask.render_template('index.html')
 
 
-@app.route('/praise', methods=['GET', 'POST'])
-def praise():
-    csrf_error = False
-    if flask.request.method == 'POST':
-        if submitted_request_valid():
-            praise = flask.request.form.get('praise', 'praise missing')
-            flask.session['praise'] = praise
-        else:
-            csrf_error = True
-            flask.g.repeat_form = True
-
-    session = authenticated_session()
-    if session:
-        userinfo = session.get(action='query',
-                               meta='userinfo',
-                               uiprop='options')['query']['userinfo']
-        name = userinfo['name']
-        gender = userinfo['options']['gender']
-        if gender == 'male':
-            default_praise = 'Praise him with great praise!'
-        elif gender == 'female':
-            default_praise = 'Praise her with great praise!'
-        else:
-            default_praise = 'Praise them with great praise!'
-    else:
-        name = None
-        default_praise = 'You rock!'
-
-    praise = flask.session.get('praise', default_praise)
-
-    return flask.render_template('praise.html',
-                                 name=name,
-                                 praise=praise,
-                                 csrf_error=csrf_error)
-
-
 @app.route('/login')
 def login():
     redirect, request_token = mwoauth.initiate(index_php,
@@ -162,7 +127,7 @@ def login():
     return flask.redirect(redirect)
 
 
-@app.route('/oauth/callback')
+@app.route('/oauth-callback')
 def oauth_callback():
     request_token = mwoauth.RequestToken(
         **flask.session.pop('oauth_request_token'))
@@ -175,6 +140,37 @@ def oauth_callback():
                                                    access_token))
     return flask.redirect(flask.url_for('index'))
 
+
+@app.route('/page')
+def page():
+    if authenticated_session():
+        return flask.render_template('page.html')
+    else:
+        return flask.redirect('/login')
+
+
+@app.route('/api/save', methods=['POST'])
+def task():
+    mwapi_auth_session = authenticated_session()
+    if not mwapi_auth_session:
+        return flask.abort(404)
+
+    data = False
+    if flask.request.method == 'POST':
+        data = flask.request.get_json(force=True)
+    else:
+        return flask.abort(400)
+
+    media_id = data['entity']
+    for item in data['targets']:
+        csrf_token = mwapi_auth_session.get(action='query', meta='tokens', type='csrf')['query']['tokens']['csrftoken']
+
+        entity = {
+            'entity-type': 'item',
+            'numeric-id': item[1:]
+        }
+        edit = mwapi_auth_session.post(action='wbcreateclaim', entity=media_id, property='P180', snaktype='value', value=json.dumps(entity), token=csrf_token)
+    return flask.jsonify(True)
 
 def full_url(endpoint, **kwargs):
     scheme = flask.request.headers.get('X-Forwarded-Proto', 'http')

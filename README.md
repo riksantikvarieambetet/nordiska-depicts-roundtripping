@@ -1,11 +1,7 @@
 # Nordic Museum Depics
 
-[This tool](https://tools.wmflabs.org/nordiska-depicts/) does things.
-
-
 ## Toolforge setup
 
-On Wikimedia Toolforge, this tool runs under the `nordiska-depicts` tool name.
 Source code resides in `~/www/python/src/`,
 a virtual environment is set up in `~/www/python/venv/`,
 logs end up in `~/uwsgi.log`.
@@ -27,20 +23,6 @@ git merge --ff-only @{u}
 pip3 install -r requirements.txt
 webservice --backend=kubernetes python3.5 restart
 ```
-
-## Local development setup
-
-You can also run the tool locally, which is much more convenient for development
-(for example, Flask will automatically reload the application any time you save a file).
-
-```
-git clone https://phabricator.wikimedia.org/source/tool-nordiska-depicts.git
-cd tool-nordiska-depicts
-pip3 install -r requirements.txt
-FLASK_APP=app.py FLASK_ENV=development flask run
-```
-
-If you want, you can do this inside some virtualenv too.
 
 ## License
 

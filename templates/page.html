@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block main %}
+
+<h2 id="title"></h2>
+<img style="max-width: 100%" id="image" src="#" />
+<h4>Depicts:</h4>
+<div id="depicts-container" style="font-size: 1.3em;"></div>
+
+<h4>Add:</h4>
+<input class="form-control" oninput="filter(this)" type="text" placeholder="Search common items or wirite a Wikidata ID." />
+<ul style="font-size: 1.3em;" id="suggestions"></ul>
+
+<button class="btn btn-primary btn-block" onclick="save()">Save</button>
+<button class="btn btn-primary btn-block" onclick="skip()">Skip</button>
+
+<a href="#">View on Wikimedia Commons</a>
+
+<style>
+#depicts-container a {
+  margin-right: 5px;
+}
+
+#depicts-container {
+  margin-bottom: 5px;
+}
+
+ul {
+  padding: 0;
+  list-style: none;
+}
+
+main li {
+  margin-top: 5px;
+  border-top: 1px solid #007bff;
+  border-bottom: 1px solid #007bff;
+  cursor: pointer;
+}
+
+main li:hover {
+  background: #e0e0e0;
+}
+
+li a {
+  margin-top: 4px;
+}
+
+button {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+</style>
+
+<script src="static/md5.min.js"></script>
+<script src="static/items.js"></script>
+<script>
+String.prototype.replaceAll = function(search, replacement) {
+  var target = this;
+  return target.replace(new RegExp(search, 'g'), replacement);
+};
+
+function filename2thumbnail(filename) {
+  filename = filename.replace('File:', '').replaceAll(' ', '_');
+  var hash = md5(filename);
+  return 'https://upload.wikimedia.org/wikipedia/commons/thumb/' + hash.slice(0, 1) + '/' + hash.slice(0, 2) + '/' + filename + '/500px-' + filename + '.jpg';
+}
+
+var endpoint = 'https://commons.wikimedia.org//w/api.php?action=wbgetentities&format=json&origin=*&utf8=1&ids=M';
+
+var image_depicts = [];
+
+function resolveQ(q) {
+  return items.find(item => {
+    return item[0] === q;
+  });
+}
+
+function createQHolder(qq, isNew) {
+  const a = document.createElement('a');
+  a.classList.add('badge');
+  const innerText = document.createTextNode(qq[1]);
+  a.appendChild(innerText);
+  a.href = 'https://www.wikidata.org/wiki/' + qq[0];
+  a.dataset.q = qq[0];
+
+  if (isNew) {
+    a.classList.add('badge-success');
+    a.dataset.new = 'true';
+  } else {
+    a.classList.add('badge-primary');
+  }
+
+  return a;
+}
+var pageId
+function fetchAndPopulate() {
+  fetch('static/pages.json')
+    .then(response => {
+      return response.json();
+    })
+    .then(data => {
+      var page = data[Math.floor(Math.random() * data.length)];
+      pageId = page['id'];
+      fetch(endpoint + page['id']).then(response => {
+        return response.json();
+      }).then(data => {
+        console.log(data)
+        console.log(data['entities']['M' + page])
+        document.querySelector('#title').innerText = page['title'].replaceAll('_', ' ').replace('File:', '');
+        document.querySelector('#image').src = filename2thumbnail(page['title']);
+
+        var entity = data['entities']['M' + page];
+        if (entity) {
+          entity['statements']['P180'].forEach(p180 => {
+            var q = p180['mainsnak']['datavalue']['value']['id'];
+            resolvedQ = resolveQ(q);
+            if (resolvedQ === undefined) {
+              resolvedQ = [q, q];
+            }
+
+            const a = createQHolder(resolvedQ);
+            document.querySelector('#depicts-container').appendChild(a);
+          });
+        }
+      });
+    });
+}
+fetchAndPopulate();
+
+function createListItem(q) {
+  var li = document.createElement('li');
+  var text = document.createTextNode(q[1]);
+  li.appendChild(text);
+
+  var a = document.createElement('a');
+  a.appendChild(document.createTextNode('wikidata'));
+  a.classList.add('badge', 'badge-primary', 'float-right');
+  a.href = 'https://www.wikidata.org/wiki/' + q[0];
+  li.appendChild(a);
+
+  li.dataset.q = q[0];
+  li.dataset.label = q[1];
+  li.addEventListener('click', selectedQItem);
+  return li;
+}
+
+function filter(e) {
+  document.querySelector('#suggestions').innerHTML = '';
+  var filtered = items.filter(item => {
+    return item[1].startsWith(e.value)
+  });
+
+  filtered.slice(0, 5).forEach(item => {
+    document.querySelector('#suggestions').appendChild(createListItem(item));
+  });
+}
+
+function selectedQItem(e) {
+  // # avoiding duplicates
+  if (document.querySelector('#depicts-container a[href="https://www.wikidata.org/wiki/' + e.target.dataset.q + '"]')) {
+    return;
+  }
+  document.querySelector('#depicts-container').appendChild(createQHolder([e.target.dataset.q, e.target.dataset.label], true));
+}
+
+function save() {
+  var newItems = document.querySelectorAll('#depicts-container a[data-new="true"]')
+  var newQ = [...newItems].map(item => {
+    return item.dataset.q;
+  });
+
+  fetch('api/save', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      entity: 'M' + pageId,
+      targets: newQ,
+    }),
+  }).then(response => {
+    console.log(response.json());
+    skip();
+  });
+}
+
+function skip() {
+  document.querySelector('#image').src = '';
+  document.querySelector('#depicts-container').innerHTML = '';
+  fetchAndPopulate();
+}
+
+filter(document.querySelector('input'));
+</script>
+
+{% endblock %}
