@@ -4,7 +4,7 @@
 <p>Sign in with your Wikimedia account to get started.</p>
 
 {% if authenticated_session() %}
-<a href="{{ url_for('task') }}" class="btn btn-primary">Start</a>
+<a href="{{ url_for('page') }}" class="btn btn-primary">Start</a>
 {% else %}
 <a href="{{ url_for('login') }}" class="btn btn-primary">Sign in</a>
 {% endif %}
