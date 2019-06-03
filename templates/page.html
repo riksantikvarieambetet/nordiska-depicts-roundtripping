@@ -141,6 +141,7 @@ function createListItem(q) {
   a.appendChild(document.createTextNode('wikidata'));
   a.classList.add('badge', 'badge-primary', 'float-right');
   a.href = 'https://www.wikidata.org/wiki/' + q[0];
+  a.target = '_blank';
   li.appendChild(a);
 
   li.dataset.q = q[0];
@@ -161,8 +162,8 @@ function filter(e) {
 }
 
 function selectedQItem(e) {
-  // # avoiding duplicates
-  if (document.querySelector('#depicts-container a[href="https://www.wikidata.org/wiki/' + e.target.dataset.q + '"]')) {
+  // # handeling label clicks and avoiding duplicates
+  if (e.target.datasetq === undefined || document.querySelector('#depicts-container a[href="https://www.wikidata.org/wiki/' + e.target.dataset.q + '"]')) {
     return;
   }
   document.querySelector('#depicts-container').appendChild(createQHolder([e.target.dataset.q, e.target.dataset.label], true));
