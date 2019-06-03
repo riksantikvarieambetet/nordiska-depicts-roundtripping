@@ -13,7 +13,7 @@
 <button class="btn btn-primary btn-block" onclick="save()">Save</button>
 <button class="btn btn-primary btn-block" onclick="skip()">Skip</button>
 
-<a href="#">View on Wikimedia Commons</a>
+<a id="commons-link" href="#">View on Wikimedia Commons</a>
 
 <footer>
   <hr>
@@ -69,7 +69,7 @@ function filename2thumbnail(filename) {
   return 'https://upload.wikimedia.org/wikipedia/commons/thumb/' + hash.slice(0, 1) + '/' + hash.slice(0, 2) + '/' + filename + '/500px-' + filename + '.jpg';
 }
 
-var endpoint = 'https://commons.wikimedia.org//w/api.php?action=wbgetentities&format=json&origin=*&utf8=1&ids=M';
+var endpoint = 'https://commons.wikimedia.org/w/api.php?action=wbgetentities&format=json&origin=*&utf8=1&ids=M';
 
 var image_depicts = [];
 
@@ -112,6 +112,7 @@ function fetchAndPopulate() {
         console.log(data['entities']['M' + page])
         document.querySelector('#title').innerText = page['title'].replaceAll('_', ' ').replace('File:', '');
         document.querySelector('#image').src = filename2thumbnail(page['title']);
+        document.querySelector('#commons-link').href = 'https://commons.wikimedia.org/?curid=' + pageId;
 
         var entity = data['entities']['M' + page];
         if (entity) {
