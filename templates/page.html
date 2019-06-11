@@ -163,7 +163,7 @@ function filter(e) {
 
 function selectedQItem(e) {
   // # handeling label clicks and avoiding duplicates
-  if (e.target.datasetq === undefined || document.querySelector('#depicts-container a[href="https://www.wikidata.org/wiki/' + e.target.dataset.q + '"]')) {
+  if (e.target.dataset.q === undefined || document.querySelector('#depicts-container a[href="https://www.wikidata.org/wiki/' + e.target.dataset.q + '"]')) {
     return;
   }
   document.querySelector('#depicts-container').appendChild(createQHolder([e.target.dataset.q, e.target.dataset.label], true));
